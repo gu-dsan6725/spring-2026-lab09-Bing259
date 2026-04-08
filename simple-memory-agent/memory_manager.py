@@ -200,11 +200,14 @@ class MemoryManager:
             if run_id:
                 full_metadata["run_id"] = run_id
 
-            # Store in Mem0 cloud platform with user_id and run_id as first-class parameters
+            # Store in Mem0 cloud platform.
+            # Mem0 Cloud requires messages list format (plain strings return PENDING and are not stored).
+            # Do NOT pass run_id to add(): Mem0 stores it in a run-scoped namespace that is NOT
+            # reachable via user_id filter in search/get_all, breaking cross-session recall.
+            # run_id is preserved in metadata for traceability.
             self.memory.add(
-                content,
+                [{"role": "user", "content": content}],
                 user_id=user_id,
-                run_id=run_id,
                 metadata=full_metadata
             )
 
@@ -527,10 +530,14 @@ class MemoryManager:
                 f"(user msg length: {len(user_message)})"
             )
 
+            # Mem0 Cloud requires messages list format for proper processing.
+            # Do NOT pass run_id to add(): see insert() for explanation.
             self.memory.add(
-                conversation_text,
+                [
+                    {"role": "user", "content": user_message},
+                    {"role": "assistant", "content": assistant_message},
+                ],
                 user_id=user_id,
-                run_id=run_id,
                 metadata=full_metadata
             )
 
